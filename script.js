@@ -154,7 +154,13 @@ const UI = {
     res_work_on: "Yang perlu dikerjakan:",
     res_tip: "Jika Anda sudah dua kali memperbaiki gerbang yang sama tetapi hasilnya belum sesuai dengan klaim, jangan diulang terus. Tinjau ulang asumsi awal: satuan pembanding, batas penilaian, atau titik awal.",
     res_disclaimer: "Ini pemeriksaan mandiri berdasarkan jawaban Anda, bukan sertifikasi.",
+    csv_section: "Bagian",
+    csv_field: "Isian",
+    csv_value: "Nilai",
+    csv_status: "Status",
     btn_ai_explain: "Minta asisten menjelaskan hasil ini",
+    btn_download_check: "Unduh hasil cek (CSV)",
+    btn_download_calc: "Unduh hasil beban (CSV)",
     explain_user_msg: "Tolong jelaskan hasil cek ide saya dengan bahasa sederhana dan beri langkah berikutnya.",
 
     calc_title: "Hitung beban limbah: kepekatan × debit",
@@ -178,6 +184,8 @@ const UI = {
     r_after: "Beban sesudah",
     r_change: "Perubahan",
     r_unc: "Ketidakpastian gabungan (k = 2)",
+    r_verdict: "Hasil perhitungan beban",
+    r_energy: "Listrik bersih dan emisi",
     unit_load: "kg COD/hari",
     v_clear: "Beban turun dengan jelas: perubahannya lebih besar daripada kesalahan ukur. Bagian beban di Gerbang 3 terpenuhi.",
     v_unclear: "Tampak turun, tetapi masih dalam batas kesalahan ukur. Ulangi pengukuran atau perbaiki metode (Gerbang 2) sebelum menyimpulkan.",
@@ -313,7 +321,13 @@ const UI = {
     res_work_on: "What to work on:",
     res_tip: "If you have fixed the same gate twice and the result still does not match your claim, do not keep repeating. Rethink the starting assumptions: the unit you compare in, the boundary, or the baseline.",
     res_disclaimer: "This is a self-check based on your answers, not a certification.",
+    csv_section: "Section",
+    csv_field: "Field",
+    csv_value: "Value",
+    csv_status: "Status",
     btn_ai_explain: "Ask the assistant to explain this result",
+    btn_download_check: "Download check result (CSV)",
+    btn_download_calc: "Download load result (CSV)",
     explain_user_msg: "Please explain my self-check result in simple words and tell me what to do next.",
 
     calc_title: "Pollutant load: strength × flow",
@@ -337,6 +351,8 @@ const UI = {
     r_after: "Load after",
     r_change: "Change",
     r_unc: "Combined uncertainty (k = 2)",
+    r_verdict: "Pollutant-load result",
+    r_energy: "Net electricity and emissions",
     unit_load: "kg COD/day",
     v_clear: "The load clearly fell: the change is bigger than the measuring error. The load part of Gate 3 is met.",
     v_unclear: "It looks lower, but it is still within the measuring error. Repeat the measurement or improve the method (Gate 2) before concluding.",
@@ -694,6 +710,25 @@ const nf = (n, d = 0) =>
   new Intl.NumberFormat(state.lang === "id" ? "id-ID" : "en-US", { maximumFractionDigits: d }).format(n);
 const signed = (n, d = 1) => (n > 0 ? "+" : n < 0 ? "−" : "") + nf(Math.abs(n), d);
 
+function downloadCSV(filename, rows) {
+  const csv = rows.map((row) => row.map((value) => {
+    if (value === null || value === undefined) return "";
+    let text = String(value);
+    const isNumber = /^-?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i.test(text);
+    if (!isNumber && /^[\s]*[=+\-@\t\r]/.test(text)) text = "'" + text;
+    return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  }).join(",")).join("\r\n");
+  const blob = new Blob(["\ufeff", csv, "\r\n"], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 const store = {
   get(k, session = false) {
     try { return (session ? sessionStorage : localStorage).getItem(k); } catch { return null; }
@@ -929,6 +964,7 @@ function resultHTML() {
     ${ev.stopped !== null ? `<p class="fine">${esc(t("res_tip"))}</p>` : ""}
     <div class="res-actions">
       <button type="button" class="btn btn-primary" data-action="explain">${esc(t("btn_ai_explain"))}</button>
+      <button type="button" class="btn btn-ghost" data-action="download-check">${esc(t("btn_download_check"))}</button>
       <button type="button" class="btn btn-ghost" data-action="restart">${esc(t("btn_restart"))}</button>
     </div>
     <p class="fine">${esc(t("res_disclaimer"))}</p>`;
@@ -1035,6 +1071,8 @@ wizard.addEventListener("click", (e) => {
     setView("intro", 0);
   } else if (action === "retry-save") {
     submitResult();
+  } else if (action === "download-check") {
+    downloadCheckCSV();
   } else if (action === "explain") {
     const prompt = buildExplainPrompt();
     $("#ask").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1113,6 +1151,45 @@ async function submitResult() {
   updateSaveStatus();
 }
 
+function downloadCheckCSV() {
+  const ev = evaluate();
+  const role = ROLES.find((r) => r.id === state.role);
+  const path = PATHS.find((p) => p.id === state.path);
+  let outcome;
+  if (ev.stopped === null) {
+    outcome = t("res_ok_h");
+  } else {
+    const row = ev.rows[ev.stopped];
+    outcome = row.status === "unsure"
+      ? tpl(t("res_wait_h"), { n: ev.stopped + 1, title: L(row.gate.title) })
+      : tpl(t("res_stop_h"), { n: ev.stopped + 1, title: L(row.gate.title) });
+  }
+  const rows = [
+    [t("csv_section"), t("csv_field"), t("csv_value")],
+    [t("res_title"), t("res_name"), state.name],
+    [t("res_title"), t("res_email"), state.email],
+    [t("res_title"), t("res_idea"), state.idea],
+    [t("res_title"), t("res_role"), role ? L(role.label) : state.role],
+    [t("res_title"), t("res_path"), path ? L(path.label) : state.path],
+    [t("res_title"), t("res_title"), outcome],
+  ];
+
+  ev.rows.forEach((row) => {
+    rows.push([row.gate.id, t("csv_status"), t("st_" + row.status)]);
+  });
+  GATES.forEach((gate) => {
+    questionsFor(gate).forEach((question) => {
+      const answer = state.answers[answerKey(gate, question)];
+      rows.push([
+        gate.id,
+        L(question.text),
+        answer ? t("ans_" + answer) : "",
+      ]);
+    });
+  });
+  downloadCSV("check-your-idea.csv", rows);
+}
+
 /* Turn the result into a plain-text summary for the assistant (English, so it is consistent) */
 function buildExplainPrompt() {
   const ev = evaluate();
@@ -1168,16 +1245,23 @@ function runCalc() {
   const loadB = (codB * flowB) / 1000;
   const loadA = (codA * flowA) / 1000;
   const delta = loadA - loadB;
+  const uncertaintyB = Number.isNaN(errB) ? 0 : errB;
+  const uncertaintyA = Number.isNaN(errA) ? 0 : errA;
 
   // Percentages are treated as standard uncertainties; k = 2 (about 95 %).
-  const uB = loadB * ((Number.isNaN(errB) ? 0 : errB) / 100);
-  const uA = loadA * ((Number.isNaN(errA) ? 0 : errA) / 100);
+  const uB = loadB * (uncertaintyB / 100);
+  const uA = loadA * (uncertaintyA / 100);
   const U = 2 * Math.sqrt(uB * uB + uA * uA);
 
   const kwhNet = extra - saved;
   const co2 = kwhNet * (Number.isNaN(ef) ? 0 : ef);
 
-  state.lastCalc = { loadB, loadA, delta, U, flowB, flowA, codB, codA, kwhNet, co2 };
+  state.lastCalc = {
+    loadB, loadA, delta, U, flowB, flowA, codB, codA,
+    errB: uncertaintyB, errA: uncertaintyA,
+    extra, saved, ef: Number.isNaN(ef) ? 0 : ef,
+    kwhNet, co2,
+  };
   renderCalc();
 }
 
@@ -1187,10 +1271,7 @@ function renderCalc() {
   if (!c) { out.innerHTML = ""; return; }
   if (c.missing) { out.innerHTML = `<p class="form-err">${esc(t("calc_missing"))}</p>`; return; }
 
-  let verdictKey, verdictClass;
-  if (c.delta < 0 && Math.abs(c.delta) > c.U) { verdictKey = "v_clear"; verdictClass = "ok"; }
-  else if (c.delta < 0) { verdictKey = "v_unclear"; verdictClass = "wait"; }
-  else { verdictKey = "v_fail"; verdictClass = "stop"; }
+  const verdict = calcVerdict(c);
 
   const notes = [];
   if (c.flowA < c.flowB && c.codA > c.codB) notes.push(t("n_shift"));
@@ -1204,12 +1285,49 @@ function renderCalc() {
       <dt class="total">${esc(t("r_change"))}</dt><dd class="total">${signed(c.delta, 0)} ${esc(t("unit_load"))}</dd>
       <dt>${esc(t("r_unc"))}</dt><dd>± ${nf(c.U, 0)} ${esc(t("unit_load"))}</dd>
     </dl>
-    <div class="verdict ${verdictClass}"><p>${esc(t(verdictKey))}</p></div>
+    <div class="verdict ${verdict.className}"><p>${esc(t(verdict.key))}</p></div>
     ${notes.map((n) => `<p class="note">${esc(n)}</p>`).join("")}
     <h4>${esc(t("e_title"))}</h4>
     <p>${esc(tpl(t("e_net"), { kwh: signed(c.kwhNet, 1), co2: signed(c.co2, 1) }))}</p>
-    <p class="${energyUp ? "note" : ""}">${esc(energyUp ? t("e_up") : t("e_down"))}</p>`;
+    <p class="${energyUp ? "note" : ""}">${esc(energyUp ? t("e_up") : t("e_down"))}</p>
+    <div class="btn-row"><button type="button" class="btn btn-ghost" data-action="download-calc">${esc(t("btn_download_calc"))}</button></div>`;
 }
+
+function calcVerdict(c) {
+  if (c.delta < 0 && Math.abs(c.delta) > c.U) return { key: "v_clear", className: "ok" };
+  if (c.delta < 0) return { key: "v_unclear", className: "wait" };
+  return { key: "v_fail", className: "stop" };
+}
+
+function downloadCalcCSV() {
+  const c = state.lastCalc;
+  if (!c || c.missing) return;
+
+  const verdict = calcVerdict(c);
+  const rows = [
+    [t("csv_section"), t("csv_field"), t("csv_value")],
+    [t("c_before"), t("c_flow"), c.flowB],
+    [t("c_before"), t("c_cod"), c.codB],
+    [t("c_before"), t("c_err"), c.errB],
+    [t("c_after"), t("c_flow"), c.flowA],
+    [t("c_after"), t("c_cod"), c.codA],
+    [t("c_after"), t("c_err"), c.errA],
+    [t("e_title"), t("c_extra"), c.extra],
+    [t("e_title"), t("c_saved"), c.saved],
+    [t("e_title"), t("c_factor"), c.ef],
+    [t("r_before"), t("unit_load"), c.loadB],
+    [t("r_after"), t("unit_load"), c.loadA],
+    [t("r_change"), t("unit_load"), c.delta],
+    [t("r_unc"), t("unit_load"), c.U],
+    [t("r_change"), t("r_verdict"), t(verdict.key)],
+    [t("e_title"), t("r_energy"), tpl(t("e_net"), { kwh: c.kwhNet, co2: c.co2 })],
+  ];
+  downloadCSV("pollutant-load.csv", rows);
+}
+
+$("#calcOut").addEventListener("click", (e) => {
+  if (e.target.closest('[data-action="download-calc"]')) downloadCalcCSV();
+});
 
 function fillPreset(p) {
   // Hypothetical scenarios from the paper (10 t fresh cherry per day)
