@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lima Gerbang — Five Gates for coffee processing</title>
+  <meta name="description" content="A plain-language guide for coffee farmers to check whether a change in processing is really cleaner, with an AI assistant powered by Groq.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip" href="#main" data-i18n="skip">Langsung ke isi halaman</a>
+
+  <header class="site-header">
+    <div class="wrap bar">
+      <a class="brand" href="#top">
+        <span class="brand-glyph" id="brandGlyph" aria-hidden="true"></span>
+        <span class="brand-text">
+          <strong data-i18n="brand_name">Lima Gerbang</strong>
+          <small data-i18n="brand_sub">Panduan untuk petani kopi</small>
+        </span>
+      </a>
+
+      <div class="tools">
+        <div class="lang" role="group" aria-label="Bahasa / Language">
+          <button type="button" class="lang-btn" data-lang="id" aria-pressed="true">ID</button>
+          <button type="button" class="lang-btn" data-lang="en" aria-pressed="false">EN</button>
+        </div>
+        <button type="button" class="icon-btn" id="openSettings" data-i18n-aria="settings" aria-label="Pengaturan">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <nav class="wrap nav" aria-label="Menu">
+      <a href="#gates" data-i18n="nav_gates">Lima gerbang</a>
+      <a href="#check" data-i18n="nav_check">Cek ide Anda</a>
+      <a href="#calc" data-i18n="nav_calc">Hitung beban</a>
+      <a href="#actors" data-i18n="nav_actors">Siapa berperan</a>
+      <a href="#ask" data-i18n="nav_ask">Tanya asisten</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <!-- Hero -->
+    <section class="hero" id="top">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <h1 data-i18n="hero_title"></h1>
+          <p class="lead" data-i18n="hero_text"></p>
+          <div class="cta-row">
+            <a class="btn btn-primary" href="#check" data-i18n="hero_cta1"></a>
+            <a class="btn btn-ghost-light" href="#ask" data-i18n="hero_cta2"></a>
+          </div>
+          <p class="hero-note" data-i18n="hero_note"></p>
+        </div>
+        <ol class="hero-gates" id="heroGates" data-i18n-aria="hero_gates_label" aria-label="Lima gerbang"></ol>
+      </div>
+    </section>
+
+    <!-- The five gates -->
+    <section class="section" id="gates">
+      <div class="wrap narrow">
+        <h2 data-i18n="gates_title"></h2>
+        <p class="section-intro" data-i18n="gates_intro"></p>
+        <ol class="path" id="gatePath"></ol>
+      </div>
+    </section>
+
+    <!-- Self-check wizard -->
+    <section class="section band" id="check">
+      <div class="wrap narrow">
+        <h2 data-i18n="check_title"></h2>
+        <p class="section-intro" data-i18n="check_intro"></p>
+        <div class="panel" id="wizard"></div>
+      </div>
+    </section>
+
+    <!-- Load calculator -->
+    <section class="section" id="calc">
+      <div class="wrap narrow">
+        <h2 data-i18n="calc_title"></h2>
+        <p class="section-intro" data-i18n="calc_intro"></p>
+
+        <form class="panel" id="calcForm" novalidate>
+          <div class="calc-grid">
+            <fieldset class="calc-set">
+              <legend data-i18n="c_before"></legend>
+              <label for="flowB" data-i18n="c_flow"></label>
+              <input id="flowB" type="number" inputmode="decimal" min="0" step="any">
+              <label for="codB" data-i18n="c_cod"></label>
+              <input id="codB" type="number" inputmode="decimal" min="0" step="any">
+              <label for="errB" data-i18n="c_err"></label>
+              <input id="errB" type="number" inputmode="decimal" min="0" step="any" value="10">
+            </fieldset>
+
+            <fieldset class="calc-set">
+              <legend data-i18n="c_after"></legend>
+              <label for="flowA" data-i18n="c_flow"></label>
+              <input id="flowA" type="number" inputmode="decimal" min="0" step="any">
+              <label for="codA" data-i18n="c_cod"></label>
+              <input id="codA" type="number" inputmode="decimal" min="0" step="any">
+              <label for="errA" data-i18n="c_err"></label>
+              <input id="errA" type="number" inputmode="decimal" min="0" step="any" value="10">
+            </fieldset>
+          </div>
+
+          <fieldset class="calc-set calc-energy">
+            <legend data-i18n="c_energy_h"></legend>
+            <div class="energy-grid">
+              <div>
+                <label for="kwhExtra" data-i18n="c_extra"></label>
+                <input id="kwhExtra" type="number" inputmode="decimal" min="0" step="any" value="0">
+              </div>
+              <div>
+                <label for="kwhSaved" data-i18n="c_saved"></label>
+                <input id="kwhSaved" type="number" inputmode="decimal" min="0" step="any" value="0">
+              </div>
+              <div>
+                <label for="ef" data-i18n="c_factor"></label>
+                <input id="ef" type="number" inputmode="decimal" min="0" step="any" value="0.85">
+              </div>
+            </div>
+            <p class="hint" data-i18n="c_factor_hint"></p>
+          </fieldset>
+
+          <div class="btn-row">
+            <button type="submit" class="btn btn-primary" data-i18n="btn_calc"></button>
+            <button type="button" class="btn btn-ghost" id="presetA" data-i18n="preset_a"></button>
+            <button type="button" class="btn btn-ghost" id="presetB" data-i18n="preset_b"></button>
+          </div>
+          <p class="hint" data-i18n="preset_note"></p>
+
+          <div class="calc-out" id="calcOut" aria-live="polite"></div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Who does what -->
+    <section class="section band" id="actors">
+      <div class="wrap narrow">
+        <h2 data-i18n="actors_title"></h2>
+        <p class="section-intro" data-i18n="actors_intro"></p>
+        <ul class="actors" id="actorList"></ul>
+      </div>
+    </section>
+
+    <!-- AI assistant -->
+    <section class="section" id="ask">
+      <div class="wrap narrow">
+        <h2 data-i18n="ask_title"></h2>
+        <p class="section-intro" data-i18n="ask_intro"></p>
+
+        <div class="panel chat">
+          <div class="chat-log" id="chatLog" role="log" aria-live="polite" aria-relevant="additions text"></div>
+          <div class="suggest" id="suggest"></div>
+
+          <form class="chat-form" id="chatForm">
+            <label class="sr-only" for="chatInput" data-i18n="ask_label"></label>
+            <textarea id="chatInput" rows="2" maxlength="1500" data-i18n-placeholder="ask_ph" placeholder="Tulis pertanyaan Anda…"></textarea>
+            <button type="submit" class="btn btn-primary" id="sendBtn" data-i18n="btn_send"></button>
+          </form>
+
+          <div class="chat-tools">
+            <button type="button" class="link-btn" id="clearChat" data-i18n="btn_clear"></button>
+            <button type="button" class="link-btn" id="keyState"></button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap narrow">
+      <p data-i18n="footer_text"></p>
+    </div>
+  </footer>
+
+  <!-- Settings dialog -->
+  <dialog id="settings" aria-labelledby="settingsTitle">
+    <form method="dialog" class="dlg" id="settingsForm">
+      <h2 id="settingsTitle" data-i18n="settings_title"></h2>
+
+      <label for="apiKey" data-i18n="s_key"></label>
+      <input id="apiKey" type="password" autocomplete="off" spellcheck="false" placeholder="gsk_…">
+      <p class="hint" data-i18n="s_key_hint"></p>
+
+      <label for="modelName" data-i18n="s_model"></label>
+      <input id="modelName" list="modelList" autocomplete="off" spellcheck="false">
+      <datalist id="modelList">
+        <option value="llama-3.3-70b-versatile"></option>
+        <option value="llama-3.1-8b-instant"></option>
+        <option value="openai/gpt-oss-120b"></option>
+        <option value="openai/gpt-oss-20b"></option>
+      </datalist>
+      <p class="hint" data-i18n="s_model_hint"></p>
+
+      <label class="check">
+        <input type="checkbox" id="rememberKey">
+        <span data-i18n="s_remember"></span>
+      </label>
+
+      <p class="warn" data-i18n="s_warn"></p>
+
+      <div class="btn-row dlg-actions">
+        <button type="submit" value="cancel" class="btn btn-ghost" data-i18n="btn_close"></button>
+        <button type="submit" value="save" class="btn btn-primary" data-i18n="btn_save"></button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="script.js"></script>
+</body>
+</html>

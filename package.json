@@ -1,0 +1,21 @@
+{
+  "name": "lima-gerbang",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lima Gerbang (Five Gates): situs panduan petani kopi dengan server Node.js + SQLite untuk menyimpan hasil cek ide.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "export": "node export-csv.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "dotenv": "^18.0.5",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0"
+  }
+}
